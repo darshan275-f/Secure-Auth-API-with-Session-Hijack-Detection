@@ -12,15 +12,27 @@ const LoginSessionMiddleWare=async(req,res,next)=>{
         const device = req.useragent?.platform || 'Unkown' 
        const userId=req.user._id;
         const userInfo=await LoginSession.findOne({owner:userId});
-        const user=await User.findById(userId);
+        const newUser=await User.findById(userId);
         
-        if(!userInfo){
-         return next();
+   if (!userInfo) {
+        if (newUser.lastSession && (ip !== newUser.lastSession.ipAddress || device !== newUser.lastSession.device)) {
+            await sendEmailAlert(ip, device, newUser.email);
         }
-        if((ip!=userInfo.ipAddress || device!=userInfo.device) && userInfo.emailSent===false)  {
-           
-           sendEmailAlert(ip,device,user.email);
-        }
+        await LoginSession.create({
+            owner: newUser._id,
+            ipAddress: ip,
+            device: device
+        });
+        return next();
+
+    }
+    else if ((ip !== userInfo.ipAddress || device !== userInfo.device)) {
+        await sendEmailAlert(ip, device, newUser.email);
+        userInfo.ipAddress = ip;
+        userInfo.device = device;
+        await userInfo.save();
+    }
+          
        
        return next();
      } catch (error) {

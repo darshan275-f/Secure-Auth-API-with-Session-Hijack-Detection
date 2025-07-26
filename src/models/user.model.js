@@ -19,7 +19,11 @@ const userSchema=new mongoose.Schema({
     },
     refreshToken:{
         type:String
-    }
+    },
+    lastSession: {
+    ipAddress: String,
+    device: String
+}
 },
 {
     timestamps:true

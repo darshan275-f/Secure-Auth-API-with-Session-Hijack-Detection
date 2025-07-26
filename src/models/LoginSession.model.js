@@ -10,10 +10,6 @@ const loginSchema=new mongoose.Schema({
     },
     device:{
         type:String
-    },
-    emailSent:{
-        type:Boolean,
-        default:false
     }
 
 },{timestamps:true})
