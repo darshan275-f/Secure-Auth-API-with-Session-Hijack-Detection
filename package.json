@@ -1,0 +1,22 @@
+{
+  "name": "secure-auth-api-with-session-hijack-detection",
+  "version": "1.0.0",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "nodemon -r dotenv/config  src/index.js",
+    "start": "node -r dotenv/config src/index.js"
+  },
+  "author": "darshan jomaling patil",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "cookie-parser": "^1.4.7",
+    "dotenv": "^17.2.1",
+    "express": "^5.1.0",
+    "express-useragent": "^1.0.15",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.16.5"
+  }
+}
