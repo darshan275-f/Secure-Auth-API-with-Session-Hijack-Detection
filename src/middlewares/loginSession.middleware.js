@@ -1,4 +1,5 @@
 import LoginSession from "../models/LoginSession.model.js"
+import User from "../models/user.model.js";
 import ApiError from "../utils/ApiError.js";
 import sendEmailAlert from "../utils/sendEmailAlert.js";
 
@@ -11,13 +12,14 @@ const LoginSessionMiddleWare=async(req,res,next)=>{
         const device = req.useragent?.platform || 'Unkown' 
        const userId=req.user._id;
         const userInfo=await LoginSession.findOne({owner:userId});
+        const user=await User.findById(userId);
         
         if(!userInfo){
          return next();
         }
         if((ip!=userInfo.ipAddress || device!=userInfo.device) && userInfo.emailSent===false)  {
            
-           sendEmailAlert(ip,device);
+           sendEmailAlert(ip,device,user.email);
         }
        
        return next();
