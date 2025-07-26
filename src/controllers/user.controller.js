@@ -32,10 +32,10 @@ const register = asyncHandler(async (req, res) => {
     const AlreadyExistUser = await User.findOne({
         $or: [
             {
-                userName: userName.trim()
+                userName: userName?.trim()
             },
             {
-                email: email.trim()
+                email: email?.trim()
             }
         ]
     })
@@ -43,19 +43,19 @@ const register = asyncHandler(async (req, res) => {
         throw new ApiError("user Already exist with same userName or email", 400);
     }
     const user = await User.create({
-        userName: userName.trim(),
-        email: email.trim(),
+        userName: userName?.trim(),
+        email: email?.trim(),
         password: password
     })
     if (!user) {
         throw new ApiError("Error while creating user", 500)
     }
-    const newUser = await User.findOne({ userName }).select('-password -refreshToken');
+    const newUser = await User.findOne({ userName:userName.trim() }).select('-password -refreshToken');
 
     //info about user's session
 
     const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-    const device = req.useragent?.platform || 'Unkown'
+    const device = req.useragent?.platform || 'unknown'
 
     const result = await LoginSession.create({
         owner: newUser._id,
@@ -79,10 +79,10 @@ const logIn = asyncHandler(async (req, res) => {
     const user = await User.findOne({
         $or: [
             {
-                userName: userName
+                userName: userName?.trim()
             },
             {
-                email: email
+                email: email?.trim()
             }
         ]
     })
@@ -101,17 +101,17 @@ const logIn = asyncHandler(async (req, res) => {
     const newUser = await User.findOne({
         $or: [
             {
-                userName: userName
+                userName: userName?.trim()
             },
             {
-                email: email
+                email: email?.trim()
             }
         ]
     }).select('-password -refreshToken');
 
     //detection of session hijacking
     const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-    const device = req.useragent?.platform || 'Unkown'
+    const device = req.useragent?.platform || 'unknown'
 
     const userInfo = await LoginSession.findOne({ owner: newUser._id });
 
@@ -146,19 +146,21 @@ const logOut = asyncHandler(async (req, res) => {
     if (!userId) {
         throw new ApiError("LogIn first Please", 400);
     }
-    const user = await User.findByIdAndUpdate(userId, {
-        $set: { refreshToken: undefined }
-    })
+    const user = await User.findById(userId);
+    if (!user) {
+        throw new ApiError("User not found", 404);
+    }
+    user.refreshToken = undefined;
+
     const info = await LoginSession.findOne({ owner: userId });
     if (info) {
         user.lastSession = {
             ipAddress: info.ipAddress,
             device: info.device
         };
-        await user.save();
     }
+    await user.save();
 
-    await LoginSession.findOneAndDelete({ owner: userId });
     const options = {
         httpOnly: true,
         secure: true
@@ -184,7 +186,7 @@ const refreshAccessAndrefreshToken = asyncHandler(async (req, res) => {
     if (!user) {
         throw new ApiError("User doesn't exist", 400);
     }
-    const { AccessToken, refreshToken } = await generateAccessAndRefreshToken(req.user._id);
+    const { AccessToken, refreshToken } = await generateAccessAndRefreshToken(user._id);
     const options = {
         httpOnly: true,
         secure: true
@@ -193,4 +195,33 @@ const refreshAccessAndrefreshToken = asyncHandler(async (req, res) => {
 
 })
 
-export { register, logIn, logOut, infoAboutUser, refreshAccessAndrefreshToken }
+const changePassword = asyncHandler(async (req, res) => {
+    const { oldPassword, newPassword } = req.body;
+     if (!newPassword) {
+        throw new ApiError("Password is required!!", 400);
+    }
+    if (newPassword.length < 8) {
+        throw new ApiError("Password length should be more than 8", 400);
+    }
+    if (!oldPassword) {
+        throw new ApiError("Password is required!!", 400);
+    }
+    const user = await User.findById(req.user._id);
+    const check = await user.comparePassword(oldPassword);
+    if (!check) {
+        throw new ApiError("Old Password is Incorrect", 400);
+    }
+    user.password = newPassword;
+
+    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    const device = req.useragent?.platform || 'unknown'
+    user.lastSession = {
+        ipAddress: ip,
+        device: device
+    }
+    await user.save();
+    await LoginSession.findOneAndDelete({ owner: user._id });
+    return res.status(200).json(new ApiResponse("password changed!!", 200, {}));
+})
+
+export { register, logIn, logOut, infoAboutUser, refreshAccessAndrefreshToken, changePassword }

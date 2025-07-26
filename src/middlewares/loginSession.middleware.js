@@ -9,7 +9,7 @@ const LoginSessionMiddleWare=async(req,res,next)=>{
      try {
      
          const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-        const device = req.useragent?.platform || 'Unkown' 
+        const device = req.useragent?.platform || 'Unknown' 
        const userId=req.user._id;
         const userInfo=await LoginSession.findOne({owner:userId});
         const newUser=await User.findById(userId);
