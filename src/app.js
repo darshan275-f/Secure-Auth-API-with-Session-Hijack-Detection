@@ -22,19 +22,16 @@ app.use(useragent.express());
 
 
 
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, 
+  max: 100, 
+  standardHeaders: true,
+  legacyHeaders: false,
+  validate: { trustProxy: false },
+});
 
-//express-rate-limit
-const createRateLimiter=(maxReq,time)=>{
-    return rateLimit({
-        max:maxReq,
-        windowMs:time,
-        message:'Too many request try later',
-        standardHeaders:true,
-        legacyHeaders:false
-    })
-}
+app.use(limiter);
 
-app.use(createRateLimiter(100,15*60*1000))
 
 
 

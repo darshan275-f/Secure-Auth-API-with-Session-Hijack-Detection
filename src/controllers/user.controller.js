@@ -111,7 +111,7 @@ const logIn=asyncHandler(async(req,res)=>{
      if((ip!=userInfo.ipAddress || device!=userInfo.device ) && userInfo.emailSent===false)  {
         userInfo.emailSent=true;
         await userInfo.save();
-        sendEmailAlert(ip,device);
+        sendEmailAlert(ip,device,newUser.email);
      }
 
 
